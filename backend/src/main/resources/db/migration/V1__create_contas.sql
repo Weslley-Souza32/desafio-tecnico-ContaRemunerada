@@ -1,0 +1,12 @@
+CREATE TABLE contas
+(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    numero VARCHAR(30) NOT NULL UNIQUE,
+    titular VARCHAR(150) NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    saldo NUMERIC(19, 2) NOT NULL DEFAULT 0.00,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT ck_contas_saldo_nao_negativo
+        CHECK (saldo >= 0)
+);
