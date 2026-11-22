@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: conta-remunerada
+
+server:
+  port: 8081
