@@ -18,3 +18,8 @@ spring:
 
 server:
   port: 8081
+
+security:
+  jwt:
+    issuer: https://conta-remunerada.local
+    secret-base64: ${JWT_SECRET_BASE64}

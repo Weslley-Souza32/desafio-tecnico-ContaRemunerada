@@ -1,5 +1,8 @@
 package br.com.contaremunerada.shared.exception;
 
+import br.com.contaremunerada.auth.exception.CredenciaisInvalidasException;
+import br.com.contaremunerada.shared.exception.*;
+
 import br.com.contaremunerada.shared.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +49,18 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
+        .body(erro);
+  }
+
+  @ExceptionHandler(CredenciaisInvalidasException.class)
+  public ResponseEntity<ErrorResponse> tratarCredenciaisInvalidas(CredenciaisInvalidasException ex) {
+
+    ErrorResponse erro = new ErrorResponse(
+        "CREDENCIAIS_INVALIDAS",
+        "Número da conta ou senha inválidos."
+    );
+    return ResponseEntity
+        .status(HttpStatus.UNAUTHORIZED)
         .body(erro);
   }
 }
