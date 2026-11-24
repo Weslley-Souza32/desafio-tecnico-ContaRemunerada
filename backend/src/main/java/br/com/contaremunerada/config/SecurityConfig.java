@@ -1,6 +1,7 @@
 
 package br.com.contaremunerada.config;
 
+import br.com.contaremunerada.auth.security.JwtAccessDeniedHandler;
 import br.com.contaremunerada.auth.security.JwtAuthenticationEntryPoint;
 import jakarta.servlet.DispatcherType;
 
@@ -19,7 +20,8 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
-      JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint
+      JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+      JwtAccessDeniedHandler jwtAccessDeniedHandler
   ) throws Exception {
 
     http
@@ -60,6 +62,7 @@ public class SecurityConfig {
 
         .exceptionHandling(exception -> exception
             .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            .accessDeniedHandler(jwtAccessDeniedHandler)
         )
 
         .oauth2ResourceServer(oauth2 -> oauth2
