@@ -1,6 +1,8 @@
 package br.com.contaremunerada.shared.exception;
 
 import br.com.contaremunerada.auth.exception.CredenciaisInvalidasException;
+import br.com.contaremunerada.conta.exception.SaldoInsuficienteException;
+import br.com.contaremunerada.conta.exception.ValorInvalidoException;
 import br.com.contaremunerada.shared.exception.*;
 
 import br.com.contaremunerada.shared.dto.ErrorResponse;
@@ -61,6 +63,34 @@ public class GlobalExceptionHandler {
     );
     return ResponseEntity
         .status(HttpStatus.UNAUTHORIZED)
+        .body(erro);
+  }
+
+  @ExceptionHandler(ValorInvalidoException.class)
+  public ResponseEntity<ErrorResponse> tratarValorInvalido(
+      ValorInvalidoException exception
+  ) {
+    ErrorResponse erro = new ErrorResponse(
+        "VALOR_INVALIDO",
+        exception.getMessage()
+    );
+
+    return ResponseEntity
+        .status(HttpStatus.UNPROCESSABLE_ENTITY)
+        .body(erro);
+  }
+
+  @ExceptionHandler(SaldoInsuficienteException.class)
+  public ResponseEntity<ErrorResponse> trataSaldoInsuficiente(
+      SaldoInsuficienteException exception
+  ) {
+    ErrorResponse erro = new ErrorResponse(
+        "SALDO_INSUFICIENTE",
+        exception.getMessage()
+    );
+
+    return ResponseEntity
+        .status(HttpStatus.UNPROCESSABLE_ENTITY)
         .body(erro);
   }
 }

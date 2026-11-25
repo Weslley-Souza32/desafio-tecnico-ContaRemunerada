@@ -1,5 +1,6 @@
 package br.com.contaremunerada.conta.domain;
 
+import br.com.contaremunerada.conta.exception.SaldoInsuficienteException;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -59,5 +60,28 @@ public class Conta {
 
   public OffsetDateTime getCriadoEm() {
     return criadoEm;
+  }
+
+  public void creditar(BigDecimal valor) {
+    validarValorPositivo(valor);
+
+    this.saldo = this.saldo.add(valor);
+  }
+
+  public void debitar(BigDecimal valor) {
+    validarValorPositivo(valor);
+
+    if (this.saldo.compareTo(valor) < 0){
+      throw new SaldoInsuficienteException();
+    }
+
+    this.saldo = this.saldo.subtract(valor);
+  }
+
+  private void validarValorPositivo(BigDecimal valor) {
+    if (valor == null || valor.signum() <= 0 || valor.scale() > 2) {
+
+      throw new IllegalArgumentException("O valor dever ser positivo e ter no máximo duas casas decimais.");
+    }
   }
 }
