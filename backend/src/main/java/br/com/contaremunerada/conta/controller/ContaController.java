@@ -11,6 +11,8 @@ import br.com.contaremunerada.conta.service.AbrirContaService;
 import br.com.contaremunerada.conta.service.ConsultarSaldoService;
 import br.com.contaremunerada.conta.service.DepositarService;
 import br.com.contaremunerada.conta.service.SacarService;
+import br.com.contaremunerada.lancamento.dto.ExtratoResponse;
+import br.com.contaremunerada.lancamento.service.ConsultarExtratoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,13 +29,15 @@ public class ContaController {
   private final ConsultarSaldoService consultarSaldoService;
   private final DepositarService depositarService;
   private final SacarService sacarService;
+  private final ConsultarExtratoService consultarExtratoService;
 
-  public ContaController(AbrirContaService abrirContaService, AutorizacaoContaService autorizacaoContaService, ConsultarSaldoService consultarSaldoService, DepositarService depositarService, SacarService sacarService) {
+  public ContaController(AbrirContaService abrirContaService, AutorizacaoContaService autorizacaoContaService, ConsultarSaldoService consultarSaldoService, DepositarService depositarService, SacarService sacarService, ConsultarExtratoService consultarExtratoService) {
     this.abrirContaService = abrirContaService;
     this.autorizacaoContaService = autorizacaoContaService;
     this.consultarSaldoService = consultarSaldoService;
     this.depositarService = depositarService;
     this.sacarService = sacarService;
+    this.consultarExtratoService = consultarExtratoService;
   }
 
   @PostMapping
@@ -96,5 +100,23 @@ public class ContaController {
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .build();
+  }
+
+  @GetMapping("/{id}/extrato")
+  public ResponseEntity<ExtratoResponse> consultarExtrato(
+      @PathVariable("id") Long contaId,
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size
+  ) {
+    autorizacaoContaService.validarAcesso(contaId, jwt);
+
+    ExtratoResponse extratoResponse = consultarExtratoService.consultar(
+        contaId,
+        page,
+        size
+    );
+
+    return ResponseEntity.ok(extratoResponse);
   }
 }
