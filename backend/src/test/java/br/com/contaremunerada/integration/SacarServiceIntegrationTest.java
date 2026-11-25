@@ -130,4 +130,64 @@ public class SacarServiceIntegrationTest {
         saldo.compareTo(somaLancamentos)
     );
   }
+
+
+  @Test
+  void deveManterConsistenciaAposTresMovimentacoes() {
+
+    Conta conta = contaRepository.saveAndFlush(
+        new Conta(
+            "CR-TESTE-SEQUENCIA-001",
+            "Maria Silva",
+            "hash-senha-teste"
+        )
+    );
+
+    Long contaId = conta.getId();
+
+    depositarService.depositar(contaId, "200.00");
+    sacarService.sacar(contaId, "75.50");
+    depositarService.depositar(contaId, "10.25");
+
+    BigDecimal saldo = jdbcTemplate.queryForObject(
+        "SELECT saldo FROM contas WHERE id = ?",
+        BigDecimal.class,
+        contaId
+    );
+
+    BigDecimal somaLancamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COALESCE(SUM(valor), 0.00)
+        FROM lancamentos
+        WHERE conta_id = ?
+        """,
+        BigDecimal.class,
+        contaId
+    );
+
+    Integer quantidadeLancamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM lancamentos
+        WHERE conta_id = ?
+        """,
+        Integer.class,
+        contaId
+    );
+
+    assertNotNull(saldo);
+    assertNotNull(somaLancamentos);
+
+    assertEquals(
+        0,
+        new BigDecimal("134.75").compareTo(saldo)
+    );
+
+    assertEquals(3, quantidadeLancamentos);
+
+    assertEquals(
+        0,
+        saldo.compareTo(somaLancamentos)
+    );
+  }
 }

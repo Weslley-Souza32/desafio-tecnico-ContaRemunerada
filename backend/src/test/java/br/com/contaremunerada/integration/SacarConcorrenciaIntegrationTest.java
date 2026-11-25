@@ -168,4 +168,93 @@ public class SacarConcorrenciaIntegrationTest {
         saldo.compareTo(somaLancamentos)
     );
   }
+
+
+  @Test
+  void deveManterConsistenciaComDepositoESaqueSimultaneos()
+      throws Exception {
+
+    Conta conta = contaRepository.saveAndFlush(
+        new Conta(
+            "CR-TESTE-CONCORRENCIA-MISTA",
+            "Maria Silva",
+            "hash-senha-teste"
+        )
+    );
+
+    Long contaId = conta.getId();
+
+    depositarService.depositar(contaId, "100.00");
+
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    CountDownLatch preparadas = new CountDownLatch(2);
+    CountDownLatch iniciar = new CountDownLatch(1);
+
+    Callable<Void> deposito = () -> {
+      preparadas.countDown();
+      if (!iniciar.await(10, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Tempo de espera excedido.");
+      }
+
+      depositarService.depositar(contaId, "50.00");
+      return null;
+    };
+
+    Callable<Void> saque = () -> {
+      preparadas.countDown();
+      if (!iniciar.await(10, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Tempo de espera excedido.");
+      }
+
+      sacarService.sacar(contaId, "80.00");
+      return null;
+    };
+
+    try {
+      Future<Void> resultadoDeposito = executor.submit(deposito);
+      Future<Void> resultadoSaque = executor.submit(saque);
+
+      assertTrue(preparadas.await(10, TimeUnit.SECONDS));
+      iniciar.countDown();
+
+      resultadoDeposito.get(20, TimeUnit.SECONDS);
+      resultadoSaque.get(20, TimeUnit.SECONDS);
+
+    } finally {
+      iniciar.countDown();
+      executor.shutdownNow();
+    }
+
+    BigDecimal saldo = jdbcTemplate.queryForObject(
+        "SELECT saldo FROM contas WHERE id = ?",
+        BigDecimal.class,
+        contaId
+    );
+
+    BigDecimal somaLancamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COALESCE(SUM(valor), 0.00)
+        FROM lancamentos
+        WHERE conta_id = ?
+        """,
+        BigDecimal.class,
+        contaId
+    );
+
+    Integer quantidadeLancamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM lancamentos
+        WHERE conta_id = ?
+        """,
+        Integer.class,
+        contaId
+    );
+
+    assertNotNull(saldo);
+    assertNotNull(somaLancamentos);
+    assertEquals(0, new BigDecimal("70.00").compareTo(saldo));
+    assertEquals(3, quantidadeLancamentos);
+    assertEquals(0, saldo.compareTo(somaLancamentos));
+  }
 }
