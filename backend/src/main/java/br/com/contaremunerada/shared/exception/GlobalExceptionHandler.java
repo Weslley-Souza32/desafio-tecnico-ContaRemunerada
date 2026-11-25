@@ -12,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -93,4 +94,27 @@ public class GlobalExceptionHandler {
         .status(HttpStatus.UNPROCESSABLE_ENTITY)
         .body(erro);
   }
+
+
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<ErrorResponse> tratarResponseStatus(
+      ResponseStatusException exception
+  ) {
+    if (exception.getStatusCode().value() == 422) {
+      return ResponseEntity
+          .status(HttpStatus.UNPROCESSABLE_ENTITY)
+          .body(new ErrorResponse(
+              "DATA_INVALIDA",
+              exception.getReason()
+          ));
+    }
+
+    return ResponseEntity
+        .status(exception.getStatusCode())
+        .body(new ErrorResponse(
+            "ERRO_REQUISICAO",
+            "Não foi possível processar a requisição."
+        ));
+  }
+
 }
