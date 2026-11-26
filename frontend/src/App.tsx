@@ -1,66 +1,35 @@
-import './App.css'
-import { Box, Button, Card, CardContent, Container, Stack, Typography } from '@mui/material'
+import { Navigate, Route, Routes } from "react-router";
+import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { ProtectedRoute } from "./routes/ProtectedRoute";
 
 function App() {
-
   return (
-    <Box sx={{ minHeight: '100vh', py: 8 }}>
-      <Container maxWidth="md">
-        <Stack spacing={4}>
-          <Box>
-            <Typography
-              variant="h4"
-              component="h1"
-              color="primary"
-              sx={{ fontWeight: 700 }}
-            >
-              Conta Remunerada
-            </Typography>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mt: 1 }}
-            >
-              Gerencie sua conta, consulte seu saldo
-              e acompanhe seus rendimentos.
-            </Typography>
-          </Box>
-          <Card>
-            <CardContent>
-              <Stack spacing={3}>
-                <Box>
-                  <Typography
-                    variant="overline"
-                    color="text.secondary"
-                  >
-                    Saldo disponível
-                  </Typography>
+      <Route
+        path="/login"
+        element={<PlaceholderPage title="Entrar na conta" />}
+      />
 
-                  <Typography
-                    variant="h3"
-                    sx={{ fontWeight: 700 }}
-                  >
-                    R$ 0,00
-                  </Typography>
-                </Box>
+      <Route
+        path="/cadastro"
+        element={<PlaceholderPage title="Abrir conta" />}
+      />
 
-                <Stack direction="row" spacing={2}>
-                  <Button variant="contained">
-                    Depositar
-                  </Button>
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/painel"
+          element={<PlaceholderPage title="Painel da conta" />}
+        />
+      </Route>
 
-                  <Button variant="outlined">
-                    Sacar
-                  </Button>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Stack>
-      </Container>
-    </Box>
+      <Route
+        path="*"
+        element={<PlaceholderPage title="Página não encontrada" />}
+      />
+    </Routes>
   );
 }
 
-export default App
+export default App;
