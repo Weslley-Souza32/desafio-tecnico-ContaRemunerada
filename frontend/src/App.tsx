@@ -1,7 +1,22 @@
+import { useEffect, useState } from 'react';
 import './App.css'
-import { Box, Button, Card, CardContent, Container, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Card, CardContent, Container, Stack, Typography } from '@mui/material'
+import { getApiHealth } from './api/healthService';
 
 function App() {
+
+  const [apiStatus, setApiStatus] = useState('Verificando API...');
+
+  useEffect(() => {
+    getApiHealth()
+      .then((response) => {
+        setApiStatus(`API: ${response.status}`);
+      })
+      .catch((error: unknown) => {
+        console.error('Erro ao consultar API:', error);
+        setApiStatus('Não possível conectar à API');
+      });
+  }, []);
 
   return (
     <Box sx={{ minHeight: '100vh', py: 8 }}>
@@ -26,7 +41,9 @@ function App() {
               e acompanhe seus rendimentos.
             </Typography>
           </Box>
-
+          <Alert severity={apiStatus === 'API: UP' ? 'success' : 'info'}>
+            {apiStatus}
+          </Alert>
           <Card>
             <CardContent>
               <Stack spacing={3}>
