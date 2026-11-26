@@ -1166,6 +1166,123 @@ class FechamentoIdempotenciaIntegrationTest {
     );
   }
 
+  @Test
+  void deveCalcularJurosConformeExemploOficialD1aD4() {
+
+    // Arrange: conta com saldo inicial de R$ 1.000,00
+    Conta conta = contaRepository.saveAndFlush(
+        new Conta(
+            "CR-EXEMPLO-OFICIAL-001",
+            "Cliente Exemplo Oficial",
+            "hash-senha-teste"
+        )
+    );
+
+    Long contaId = conta.getId();
+
+    depositarService.depositar(contaId, "1000.00");
+
+    // Taxa inicial: 0,0300% ao dia
+    taxaDiariaService.configurar("0.0003");
+
+    LocalDate d1 = LocalDate.now().minusDays(4);
+    LocalDate d2 = LocalDate.now().minusDays(3);
+    LocalDate d3 = LocalDate.now().minusDays(2);
+    LocalDate d4 = LocalDate.now().minusDays(1);
+
+    // D1: 1000,00 + 0,30 = 1000,30
+    var fechamentoD1 = executarFechamentoService.executar(d1);
+
+    assertEquals("CONCLUIDO", fechamentoD1.status().name());
+    assertEquals(1, fechamentoD1.contasProcessadas());
+
+    verificarSaldo(contaId, "1000.30");
+
+    // D2: 1000,30 + 0,30 = 1000,60
+    var fechamentoD2 = executarFechamentoService.executar(d2);
+
+    assertEquals("CONCLUIDO", fechamentoD2.status().name());
+    assertEquals(1, fechamentoD2.contasProcessadas());
+
+    verificarSaldo(contaId, "1000.60");
+
+    // D3: saque de R$ 500,00 antes do fechamento
+    sacarService.sacar(contaId, "500.00");
+
+    verificarSaldo(contaId, "500.60");
+
+    // D3: 500,60 + 0,15 = 500,75
+    var fechamentoD3 = executarFechamentoService.executar(d3);
+
+    assertEquals("CONCLUIDO", fechamentoD3.status().name());
+    assertEquals(1, fechamentoD3.contasProcessadas());
+
+    verificarSaldo(contaId, "500.75");
+
+    // D4: alteração da taxa para 0,0350% ao dia
+    taxaDiariaService.configurar("0.00035");
+
+    // D4: 500,75 + 0,18 = 500,93
+    var fechamentoD4 = executarFechamentoService.executar(d4);
+
+    assertEquals("CONCLUIDO", fechamentoD4.status().name());
+    assertEquals(1, fechamentoD4.contasProcessadas());
+
+    verificarSaldo(contaId, "500.93");
+
+    // Deve existir um lançamento JUROS por fechamento
+    Integer totalJuros = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM lancamentos
+        WHERE conta_id = ?
+          AND tipo = 'JUROS'
+        """,
+        Integer.class,
+        contaId
+    );
+
+    assertEquals(4, totalJuros);
+
+    // Deve existir um processamento por data
+    Integer totalProcessamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM processamentos_conta
+        WHERE conta_id = ?
+        """,
+        Integer.class,
+        contaId
+    );
+
+    assertEquals(4, totalProcessamentos);
+
+    // RN-03: saldo = soma de todos os lançamentos
+    BigDecimal saldo = jdbcTemplate.queryForObject(
+        "SELECT saldo FROM contas WHERE id = ?",
+        BigDecimal.class,
+        contaId
+    );
+
+    BigDecimal somaLancamentos = jdbcTemplate.queryForObject(
+        """
+        SELECT COALESCE(SUM(valor), 0)
+        FROM lancamentos
+        WHERE conta_id = ?
+        """,
+        BigDecimal.class,
+        contaId
+    );
+
+    assertNotNull(saldo);
+    assertNotNull(somaLancamentos);
+
+    assertEquals(0, saldo.compareTo(somaLancamentos));
+    assertEquals(
+        0,
+        new BigDecimal("500.93").compareTo(saldo)
+    );
+  }
 
   private void bloquearContaAteLiberacao(
       Long contaId,
