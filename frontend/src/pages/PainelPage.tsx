@@ -3,10 +3,12 @@ import { tokenStorage } from "../auth/tokenStorage";
 import { useEffect, useState } from "react";
 import type { SaldoResponse } from "../types/saldo";
 import type { ExtratoResponse } from '../types/extrato';
+import type { TipoMovimentacao } from "../types/movimentacao";
 import { contaService } from "../api/contaService";
 import { handleApiError } from "../api/handleApiError";
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Container, Divider, Snackbar, Stack, Typography } from "@mui/material";
 import { formatarMoeda } from "../utils/formatarMoeda";
+import MovimentacaoDialog from "../components/MovimentacaoDialog";
 
 export function PainelPage() {
     const navigate = useNavigate();
@@ -18,8 +20,11 @@ export function PainelPage() {
     const [loadingExtrato, setLoadingExtrato] = useState(true);
 
     const [mensagemErro, setMensagemErro] = useState('');
+    const [mensagemSucesso, setMensagemSucesso] = useState('');
     const [paginaAtual, setPaginaAtual] = useState(0);
     const [atualizacao, setAtualizacao] = useState(0);
+    const [tipoMovimentacao, setTipoMovimentacao] =
+      useState<TipoMovimentacao | null>(null);
 
     useEffect(() => {
         if (contaId === null) {
@@ -112,6 +117,14 @@ export function PainelPage() {
         setAtualizacao((valor) => valor + 1);
     }
 
+    function handleAbrirMovimentacao(tipo: TipoMovimentacao) {
+      setTipoMovimentacao(tipo);
+    }
+
+    function handleFecharMovimentacao() {
+      setTipoMovimentacao(null);
+    }
+
     const saldoFormatado = saldo ? formatarMoeda(saldo.saldo) : "R$ 0,00";
 
     if (contaId === null) {
@@ -123,6 +136,20 @@ export function PainelPage() {
             <Button onClick={handleLogout}>Voltar ao login</Button>
           </Container>
         );
+    }
+
+    function handleMovimentacaoConcluida(tipo: TipoMovimentacao) {
+      setLoading(true);
+      setLoadingExtrato(true);
+
+      setPaginaAtual(0);
+      setAtualizacao((valor) => valor + 1);
+
+      setMensagemSucesso(
+        tipo === "DEPOSITO"
+          ? "Depósito realizado com sucesso."
+          : "Saque realizado com sucesso.",
+      );
     }
 
     return (
@@ -140,7 +167,28 @@ export function PainelPage() {
               Minha conta
             </Typography>
 
-            <Stack spacing={2} direction="row">
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
+              <Button
+                variant="contained"
+                onClick={() => handleAbrirMovimentacao("DEPOSITO")}
+              >
+                Depositar
+              </Button>
+
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => handleAbrirMovimentacao("SAQUE")}
+              >
+                Sacar
+              </Button>
+
               <Button
                 variant="outlined"
                 onClick={handleAtualizar}
@@ -148,6 +196,7 @@ export function PainelPage() {
               >
                 Atualizar
               </Button>
+
               <Button variant="outlined" color="error" onClick={handleLogout}>
                 Sair
               </Button>
@@ -277,6 +326,15 @@ export function PainelPage() {
             </Stack>
           )}
         </Stack>
+        {contaId !== null && (
+          <MovimentacaoDialog
+            open={tipoMovimentacao !== null}
+            tipo={tipoMovimentacao ?? "DEPOSITO"}
+            contaId={contaId}
+            onClose={handleFecharMovimentacao}
+            onSuccess={handleMovimentacaoConcluida}
+          />
+        )}
 
         <Snackbar
           open={Boolean(mensagemErro)}
@@ -290,6 +348,20 @@ export function PainelPage() {
             onClose={() => setMensagemErro("")}
           >
             {mensagemErro}
+          </Alert>
+        </Snackbar>
+        <Snackbar
+          open={Boolean(mensagemSucesso)}
+          autoHideDuration={4000}
+          onClose={() => setMensagemSucesso("")}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            severity="success"
+            variant="filled"
+            onClose={() => setMensagemSucesso("")}
+          >
+            {mensagemSucesso}
           </Alert>
         </Snackbar>
       </Container>
