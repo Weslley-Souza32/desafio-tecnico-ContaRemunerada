@@ -3,6 +3,7 @@ import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { CadastroPage } from "./pages/CadastroPage";
+import { PainelPage } from "./pages/PainelPage";
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route
           path="/painel"
-          element={<PlaceholderPage title="Painel da conta" />}
+          element={<PainelPage />}
         />
       </Route>
 
