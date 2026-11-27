@@ -19,3 +19,24 @@ httpClient.interceptors.request.use((config) => {
 
   return config;
 })
+
+httpClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const url = error.config?.url ?? '';
+
+      const endpointPublico = 
+      url === '/auth/login' || url === '/contas';
+
+      if (status === 401 && !endpointPublico && tokenStorage.get()) {
+        tokenStorage.remove();
+
+        window.location.replace('/login?session=expired');
+      }
+    }
+
+    return Promise.reject(error);
+  }
+)

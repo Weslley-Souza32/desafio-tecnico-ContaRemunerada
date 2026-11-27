@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
+import { LoginPage } from "./pages/LoginPage";
+import { CadastroPage } from "./pages/CadastroPage";
 
 function App() {
   return (
@@ -9,12 +11,12 @@ function App() {
 
       <Route
         path="/login"
-        element={<PlaceholderPage title="Entrar na conta" />}
+        element={<LoginPage />}
       />
 
       <Route
         path="/cadastro"
-        element={<PlaceholderPage title="Abrir conta" />}
+        element={<CadastroPage />}
       />
 
       <Route element={<ProtectedRoute />}>
